@@ -1,0 +1,132 @@
+esphome:
+  name: <<NODE NAME>>
+  platform: ESP32
+  board: 'esp-wrover-kit'
+
+wifi:
+  ssid: '<<SSID>>'
+  password: '<<PASSWORD>>'
+  manual_ip:
+   # Set this to the IP of the ESP
+   static_ip: <<STATIC_IP>>
+   # Set this to the IP address of the router. Often ends with .1
+   gateway: 192.168.1.1
+   # The subnet of the network. 255.255.255.0 works for most home networks.
+   subnet: 255.255.255.0
+
+
+# # Enable logging
+logger:
+  level: DEBUG
+
+# Enable Home Assistant API
+api:
+  password: '<<PASSWORD>>'
+
+ota:
+  password: '<<PASSWORD>>'
+
+#Outputs
+
+output:
+  - platform: ledc
+    pin: 33
+    frequency: 9765Hz
+    id: red_led
+
+  - platform: ledc
+    pin: 32
+    frequency: 9765Hz
+    id: green_led
+
+  - platform: ledc
+    pin: 14
+    frequency: 9765Hz
+    id: blue_led
+
+  - platform: ledc
+    pin: 27
+    frequency: 9765Hz
+    id: white_led
+
+  - platform: ledc
+    pin: 2
+    frequency: 9765Hz
+    id: status_led
+
+# RGB + W
+light:
+  - platform: rgb
+    name: "RGB"
+    red: red_led
+    green: green_led
+    blue: blue_led
+    effects:
+    - flicker:
+        alpha: 80%
+        intensity: 4%      
+    - random:
+    - random:
+        name: Medium Random
+        transition_length: 3s
+        update_interval: 3s 
+    - random:
+        name: Fast Random
+        transition_length: 20ms
+        update_interval: 100ms      
+    - strobe:
+        colors:
+          - state: True
+            brightness: 100%
+            duration: 10ms
+          - state: False
+            duration: 80ms
+
+  - platform: monochromatic
+    name: "W"
+    output: white_led
+    gamma_correct: 0
+    effects:
+    - flicker:
+        alpha: 80%
+        intensity: 2%
+    - flicker:
+        name: Extreme Flicker
+        alpha: 100%
+        intensity: 100%      
+    - strobe:
+        colors:
+          - state: True
+            brightness: 100%
+            duration: 10ms
+          - state: False
+            duration: 80ms   
+
+  - platform: monochromatic
+    name: status
+    id: status
+    output: status_led
+    gamma_correct: 0
+    effects:
+    - strobe:
+        colors:
+          - state: True
+            brightness: 30%
+            duration: 120ms
+          - state: False
+            duration: 120ms  
+
+interval:
+  - interval: 500ms
+    then:
+    - if:
+        condition:
+          wifi.connected:
+        then:
+          - light.turn_off: 
+              id: status
+              transition_length: 120ms
+        else:
+          - light.turn_on: 
+              id: status 
+              effect: strobe
